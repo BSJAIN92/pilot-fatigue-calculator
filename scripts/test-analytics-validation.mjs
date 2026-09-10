@@ -12,6 +12,8 @@ assert.equal(validateAndCleanAnalytics(base).event, "page_view");
 assert.throws(() => validateAndCleanAnalytics({ ...base, event: "invented_event" }));
 assert.throws(() => validateAndCleanAnalytics({ ...base, anonymousId: "x".repeat(65) }));
 assert.throws(() => validateAndCleanAnalytics({ ...base, details: { unwanted: true } }));
+assert.equal(validateAndCleanAnalytics({ ...base, countryCode: "IN" }).countryCode, "IN");
+assert.throws(() => validateAndCleanAnalytics({ ...base, countryCode: "India" }));
 
 const leg = {
   operator: "add",

@@ -38,12 +38,23 @@ export function validateAndCleanAnalytics(args) {
   if (!ALLOWED_EVENTS.has(args.event)) {
     throw new Error("Unknown analytics event.");
   }
+  const countryCode = args.countryCode || "ZZ";
+  if (!/^[A-Z]{2}$/.test(countryCode)) {
+    throw new Error("countryCode is invalid.");
+  }
+  const cleanedBase = {
+    anonymousId: args.anonymousId,
+    sessionId: args.sessionId,
+    event: args.event,
+    page: args.page,
+    countryCode,
+  };
 
   if (args.event !== "calculation_updated") {
     if (args.details !== undefined) {
       throw new Error("This event must not contain details.");
     }
-    return { ...args, details: undefined };
+    return { ...cleanedBase, details: undefined };
   }
 
   const details = args.details;
@@ -77,7 +88,7 @@ export function validateAndCleanAnalytics(args) {
   });
 
   return {
-    ...args,
+    ...cleanedBase,
     details: {
       legCount: details.legCount,
       totalDuration: details.totalDuration,

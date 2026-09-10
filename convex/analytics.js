@@ -9,8 +9,17 @@ export const track = mutation({
     event: v.string(),
     page: v.string(),
     details: v.optional(v.any()),
+    countryCode: v.optional(v.string()),
+    ingestKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const expectedIngestKey = process.env.ANALYTICS_INGEST_KEY;
+    if (
+      process.env.REQUIRE_ANALYTICS_INGEST_KEY === "true" &&
+      (!expectedIngestKey || args.ingestKey !== expectedIngestKey)
+    ) {
+      throw new Error("Analytics write access denied.");
+    }
     const cleanedArgs = validateAndCleanAnalytics(args);
     const now = Date.now();
 
@@ -36,6 +45,14 @@ export const track = mutation({
         lastSeenAt: now,
         visitCount:
           existingUser.visitCount + (cleanedArgs.event === "page_view" ? 1 : 0),
+        ...(cleanedArgs.event === "page_view"
+          ? {
+              lastCountryCode: cleanedArgs.countryCode,
+              ...(!existingUser.firstCountryCode
+                ? { firstCountryCode: cleanedArgs.countryCode }
+                : {}),
+            }
+          : {}),
       });
     } else {
       await ctx.db.insert("anonymousUsers", {
@@ -43,7 +60,31 @@ export const track = mutation({
         firstSeenAt: now,
         lastSeenAt: now,
         visitCount: cleanedArgs.event === "page_view" ? 1 : 0,
+        firstCountryCode: cleanedArgs.countryCode,
+        lastCountryCode: cleanedArgs.countryCode,
       });
+    }
+
+    if (cleanedArgs.event === "page_view") {
+      const countryStats = await ctx.db
+        .query("visitorCountryStats")
+        .withIndex("by_country_code", (q) => q.eq("countryCode", cleanedArgs.countryCode))
+        .unique();
+      const firstAttributedCountry = !existingUser?.firstCountryCode;
+      if (countryStats) {
+        await ctx.db.patch(countryStats._id, {
+          anonymousDevices: countryStats.anonymousDevices + (firstAttributedCountry ? 1 : 0),
+          pageViews: countryStats.pageViews + 1,
+          updatedAt: now,
+        });
+      } else {
+        await ctx.db.insert("visitorCountryStats", {
+          countryCode: cleanedArgs.countryCode,
+          anonymousDevices: firstAttributedCountry ? 1 : 0,
+          pageViews: 1,
+          updatedAt: now,
+        });
+      }
     }
 
     const summary = await ctx.db

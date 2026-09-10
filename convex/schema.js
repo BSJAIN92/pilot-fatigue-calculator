@@ -7,6 +7,8 @@ export default defineSchema({
     firstSeenAt: v.number(),
     lastSeenAt: v.number(),
     visitCount: v.number(),
+    firstCountryCode: v.optional(v.string()),
+    lastCountryCode: v.optional(v.string()),
   }).index("by_anonymous_id", ["anonymousId"]),
 
   analyticsSummary: defineTable({
@@ -28,12 +30,22 @@ export default defineSchema({
     .index("by_route_key", ["routeKey"])
     .index("by_count", ["count"]),
 
+  visitorCountryStats: defineTable({
+    countryCode: v.string(),
+    anonymousDevices: v.number(),
+    pageViews: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_country_code", ["countryCode"])
+    .index("by_page_views", ["pageViews"]),
+
   activityEvents: defineTable({
     anonymousId: v.string(),
     sessionId: v.string(),
     event: v.string(),
     page: v.string(),
     details: v.optional(v.any()),
+    countryCode: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_anonymous_id", ["anonymousId"])

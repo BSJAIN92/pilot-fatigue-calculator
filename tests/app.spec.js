@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/track", (route) =>
+    route.fulfill({ status: 204, body: "" }),
+  );
+});
+
 test("a pilot can calculate a flight from local airport times", async ({ page }) => {
   await page.goto("/");
 

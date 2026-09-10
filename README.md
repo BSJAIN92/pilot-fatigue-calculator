@@ -28,4 +28,6 @@ After the dashboard tables are first deployed, run `npx convex run dashboard:ini
 
 Anonymous analytics use a random browser ID stored locally. They record page visits, calculator actions, routes, flight dates and times, and calculated durations. They do not collect names or email addresses.
 
+Analytics pass through `/api/track`, which adds Vercel's two-letter visitor-country code derived from the request IP. The IP itself is never sent to or stored in Convex. Country totals appear on the private dashboard.
+
 The analytics endpoint accepts only the app's known events, limits field and route sizes, and allows at most 60 events per anonymous browser per minute. Because browsers submit anonymously, a determined person can still create new browser IDs and send false records.

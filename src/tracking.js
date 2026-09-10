@@ -1,9 +1,4 @@
-import { ConvexHttpClient } from "convex/browser";
-
-const convexUrl = import.meta.env.VITE_CONVEX_URL;
-
-if (convexUrl) {
-  const client = new ConvexHttpClient(convexUrl);
+{
   const anonymousId = getOrCreateId(localStorage, "fatigue_anonymous_id");
   const sessionId = getOrCreateId(sessionStorage, "fatigue_session_id");
 
@@ -17,13 +12,19 @@ if (convexUrl) {
   }
 
   function track(event, details) {
-    client
-      .mutation("analytics:track", {
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
         anonymousId,
         sessionId,
         event,
         page: location.pathname,
         ...(details ? { details } : {}),
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
       })
       .catch((error) => console.warn("Anonymous tracking failed:", error));
   }
@@ -89,6 +90,4 @@ if (convexUrl) {
       });
     }, 800);
   });
-} else {
-  console.info("Anonymous tracking is disabled until VITE_CONVEX_URL is configured.");
 }

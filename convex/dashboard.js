@@ -23,6 +23,11 @@ export const overview = query({
       .withIndex("by_created_at")
       .order("desc")
       .take(25);
+    const visitorCountries = await ctx.db
+      .query("visitorCountryStats")
+      .withIndex("by_page_views")
+      .order("desc")
+      .take(25);
     const latestTestRun = await ctx.db
       .query("testRuns")
       .order("desc")
@@ -42,6 +47,11 @@ export const overview = query({
         count,
       })),
       recentEvents: recentEvents.map(({ event, page, createdAt }) => ({ event, page, createdAt })),
+      visitorCountries: visitorCountries.map(({ countryCode, anonymousDevices, pageViews }) => ({
+        countryCode,
+        anonymousDevices,
+        pageViews,
+      })),
       latestTestRun,
     };
   },
