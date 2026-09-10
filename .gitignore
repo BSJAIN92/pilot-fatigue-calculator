@@ -5,6 +5,7 @@ dist/
 *.log
 playwright-report/
 test-results/
+artifacts/ui-review/
 
 .vercel
 .env*

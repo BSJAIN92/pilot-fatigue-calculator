@@ -10,6 +10,9 @@ test("a pilot can calculate a flight from local airport times", async ({ page })
   await page.goto("/");
 
   const firstRow = page.locator(".time-row").first();
+  await expect(firstRow.locator(".leg-title")).toHaveText("Leg 1");
+  await expect(firstRow.locator(".row-duration")).toHaveText("Awaiting airports");
+  await expect(page.getByText("Missing Data")).toHaveCount(0);
   await firstRow.locator(".country-select-start").selectOption("IN");
   await firstRow.locator(".airport-input-start").fill(
     "DEL/VIDP — Indira Gandhi International Airport, New Delhi",
@@ -32,6 +35,8 @@ test("a pilot can calculate a flight from local airport times", async ({ page })
   );
   await expect(firstRow.locator(".row-duration")).toHaveText("5h 30m");
   await expect(page.locator("#total-display")).toHaveText("5h 30m");
+  await page.locator(".copy-btn").click();
+  await expect(page.locator("#copy-status")).toHaveText("Copied");
 });
 
 test("legs can be added, removed, and cleared", async ({ page }) => {
@@ -51,6 +56,7 @@ test("legs can be added, removed, and cleared", async ({ page }) => {
   await expect(page.locator("#total-display")).toHaveText("0h 0m");
   await expect(page.locator(".country-select-start")).toHaveValue("");
   await expect(page.locator(".country-select-end")).toHaveValue("");
+  await expect(page.locator(".leg-title")).toHaveText("Leg 1");
 });
 
 test.describe("phone layout", () => {

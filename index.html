@@ -313,27 +313,316 @@
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Modern aviation interface */
+        :root {
+            --primary: #1463ff;
+            --primary-hover: #0b4fd1;
+            --bg: #f3f7fc;
+            --text: #10254a;
+            --text-light: #63738f;
+            --border: #cbd7e8;
+            --border-light: #e1e8f2;
+            --input-bg: #f6f9fd;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #ffffff 0, var(--bg) 38rem);
+            padding: 32px 18px 150px;
+        }
+
+        .app-container {
+            background: transparent;
+            box-shadow: none;
+            max-width: 760px;
+            padding: 0;
+        }
+
+        .app-header {
+            align-items: center;
+            display: flex;
+            gap: 14px;
+            margin: 0 auto 26px;
+            max-width: 680px;
+        }
+
+        .brand-mark {
+            align-items: center;
+            background: #e9f1ff;
+            border-radius: 15px;
+            color: var(--primary);
+            display: flex;
+            flex: 0 0 54px;
+            height: 54px;
+            justify-content: center;
+        }
+
+        .app-header h1 {
+            color: #0a2047;
+            font-size: clamp(1.65rem, 4vw, 2.15rem);
+            letter-spacing: -0.035em;
+            line-height: 1.08;
+        }
+
+        .app-subtitle {
+            color: var(--text-light);
+            font-size: 0.96rem;
+            margin-top: 6px;
+        }
+
+        #rows-container { margin-bottom: 16px; }
+
+        .time-row {
+            background: var(--card);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            box-shadow: 0 14px 38px rgba(32, 65, 116, 0.08);
+            display: block;
+            margin-bottom: 18px;
+            padding: 22px;
+        }
+
+        .leg-header {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .leg-title {
+            color: #10254a;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .leg-actions { align-items: center; display: flex; gap: 8px; }
+
+        .operator-select {
+            background: #f5f8fc;
+            background-image: none;
+            border: 1px solid var(--border-light);
+            border-radius: 999px;
+            color: var(--text-light);
+            font-size: 0.78rem;
+            font-weight: 700;
+            height: 36px;
+            margin: 0;
+            padding: 0 12px;
+            width: auto;
+        }
+
+        .remove-btn {
+            align-items: center;
+            border-radius: 9px;
+            color: #71809a;
+            display: flex;
+            font-size: 0;
+            height: 36px;
+            justify-content: center;
+            width: 36px;
+        }
+
+        .remove-btn::before {
+            content: "";
+            background: currentColor;
+            height: 18px;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 7h16m-10 4v6m4-6v6M9 7V4h6v3m-9 0 1 14h10l1-14'/%3E%3C/svg%3E") center/contain no-repeat;
+            width: 18px;
+        }
+
+        .row-inputs { gap: 0; }
+
+        .input-pair {
+            border: 0;
+            border-radius: 0;
+            gap: 11px;
+            padding: 0;
+        }
+
+        .input-pair > strong {
+            color: var(--text-light) !important;
+            font-size: 0.78rem;
+            letter-spacing: 0.11em;
+        }
+
+        .input-group label {
+            color: var(--text-light);
+            font-size: 0.78rem;
+            min-width: 58px;
+            text-align: left;
+        }
+
+        .input-group input[type="date"],
+        .input-group input[type="time"],
+        .input-group input[type="search"],
+        .input-group select {
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            color: #10254a;
+            min-height: 46px;
+            outline: none;
+            padding: 11px 13px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(20, 99, 255, 0.12);
+        }
+
+        .utc-preview {
+            color: #73829a;
+            font-size: 0.76rem;
+            padding-right: 2px;
+        }
+
+        .route-connector {
+            align-items: center;
+            color: var(--primary);
+            display: flex;
+            height: 58px;
+            justify-content: center;
+            position: relative;
+        }
+
+        .route-connector::before,
+        .route-connector::after {
+            border-left: 2px dashed #a8bddd;
+            content: "";
+            height: 15px;
+            left: 50%;
+            position: absolute;
+        }
+
+        .route-connector::before { top: 1px; }
+        .route-connector::after { bottom: 1px; }
+
+        .leg-result {
+            align-items: center;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 16px;
+        }
+
+        .leg-result-label { color: var(--text-light); font-size: 0.76rem; font-weight: 700; text-transform: uppercase; }
+        .row-duration { color: var(--primary); font-size: 1rem; margin: 0; }
+        .validation-message { margin-left: auto; }
+
+        .button-group { align-items: center; margin-top: 0; }
+        .action-btn { min-height: 50px; }
+        #add-btn { background: white; border: 1px solid var(--primary); color: var(--primary); }
+        #add-btn:hover { background: #edf4ff; }
+        #clear-btn { border: 0; background: transparent; flex: 0 0 auto; }
+
+        .result-area {
+            align-items: center;
+            background: rgba(255,255,255,0.96);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            bottom: 16px;
+            box-shadow: 0 16px 50px rgba(20, 50, 100, 0.16);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            margin: 28px 0 0;
+            padding: 18px 22px;
+            position: sticky;
+            text-align: left;
+            z-index: 20;
+        }
+
+        .result-copy { grid-column: 1; }
+        .result-label { font-size: 0.72rem; }
+        .result-value { font-size: 2.35rem; margin-top: 2px; }
+        .result-note { font-size: 0.72rem; margin-top: 4px; }
+        .copy-btn {
+            align-items: center;
+            background: var(--primary);
+            border: 0;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            font-size: 0.9rem;
+            font-weight: 700;
+            gap: 8px;
+            grid-column: 2;
+            grid-row: 1;
+            min-height: 48px;
+            padding: 0 18px;
+        }
+
+        .copy-status { color: #087a4b; font-size: 0.75rem; grid-column: 2; min-height: 1em; text-align: center; }
+
+        @media (max-width: 550px) {
+            body { padding: 22px 14px 120px; }
+            .app-header { align-items: flex-start; margin-bottom: 20px; }
+            .brand-mark { border-radius: 12px; flex-basis: 46px; height: 46px; }
+            .app-header h1 { font-size: 1.58rem; }
+            .app-subtitle { font-size: 0.84rem; }
+            .time-row { padding: 18px 15px; }
+            .input-group { align-items: stretch; flex-wrap: wrap; }
+            .input-group label { min-width: 100%; }
+            .datetime-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+            .datetime-group label { min-width: 0; }
+            .datetime-group input[type="date"], .datetime-group input[type="time"] { min-width: 0; width: 100%; }
+            .datetime-group label:first-of-type { grid-column: 1; grid-row: 1; }
+            .datetime-group input[type="date"] { grid-column: 1; grid-row: 2; }
+            .datetime-group label:last-of-type { grid-column: 2; grid-row: 1; }
+            .datetime-group input[type="time"] { grid-column: 2; grid-row: 2; }
+            .input-group input[type="search"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .route-connector { height: 50px; }
+            .leg-result { display: grid; grid-template-columns: 1fr auto; }
+            .leg-result-label { grid-column: 1; grid-row: 1; }
+            .row-duration { grid-column: 2; grid-row: 1; order: 0; }
+            .validation-message, .confirm-duration-btn { grid-column: 1 / -1; grid-row: auto; margin-left: 0; }
+            .button-group { gap: 4px; }
+            #clear-btn { padding-inline: 10px; }
+            .result-area { border-radius: 17px; bottom: auto; padding: 14px 15px; position: static; }
+            .result-value { font-size: 2rem; }
+            .result-note { max-width: 190px; }
+            .copy-btn { padding: 0 13px; }
+        }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <h2>Global Flight Time Calculator</h2>
+        <header class="app-header">
+            <div class="brand-mark" aria-hidden="true">
+                <svg width="34" height="34" viewBox="0 0 48 48" fill="none"><path d="M5 25.5 20 22l8-14 4 1-3 13 11 3.5c2 .6 3 2.1 3 3.5s-1 2.9-3 3.5L29 36l3 8-4 1-8-9-15-3.5 3-3.5-3-3.5Z" fill="currentColor"/><path d="M35 8a17 17 0 0 1 8 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+                <h1>Flight Time Calculator</h1>
+                <p class="app-subtitle">Enter local times — time zones are handled automatically.</p>
+            </div>
+        </header>
         
         <!-- Time entry rows will be injected here by JavaScript -->
         <div id="rows-container"></div>
 
         <!-- Action buttons -->
         <div class="button-group">
-            <button id="add-btn" class="action-btn" onclick="addRow()">+ Add Leg/Block</button>
+            <button id="add-btn" class="action-btn" onclick="addRow()">＋ Add another leg</button>
             <button id="clear-btn" class="action-btn" onclick="clearAll()">Clear All</button>
         </div>
 
         <!-- Result display area -->
         <div class="result-area">
-            <div class="result-label">Total Entered Duration</div>
-            <div class="result-value" id="total-display">0h 0m</div>
-            <div class="result-note" id="subtraction-note">Calculations account for Time Zones and Daylight Saving changes.</div>
+            <div class="result-copy">
+                <div class="result-label">Total Duration</div>
+                <div class="result-value" id="total-display">0h 0m</div>
+                <div class="result-note" id="subtraction-note">Calculations account for Time Zones and Daylight Saving changes.</div>
+            </div>
+            <button class="copy-btn" type="button" onclick="copyResult()" aria-label="Copy total duration">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2"/></svg>
+                Copy result
+            </button>
+            <span class="copy-status" id="copy-status" aria-live="polite"></span>
         </div>
     </div>
 
@@ -609,10 +898,16 @@
 
 
             row.innerHTML = `
-                <select class="operator-select" onchange="calculateTotal()" aria-label="Operation">
-                    <option value="1">+</option>
-                    <option value="-1">-</option>
-                </select>
+                <div class="leg-header">
+                    <span class="leg-title">Leg ${rowId}</span>
+                    <div class="leg-actions">
+                        <select class="operator-select" onchange="calculateTotal()" aria-label="How this leg affects the total">
+                            <option value="1">Add to total</option>
+                            <option value="-1">Subtract</option>
+                        </select>
+                        <button class="remove-btn" onclick="removeRow(this)" title="Remove leg" aria-label="Remove leg">&times;</button>
+                    </div>
+                </div>
 
                 <div class="row-inputs">
                     <!-- Start Date/Time/TZ Input -->
@@ -630,13 +925,17 @@
                             <input id="airport-start-${rowId}" type="search" class="airport-input-start" list="airport-list-start-${rowId}" placeholder="Select a country first" disabled autocomplete="off" aria-label="Departure Airport">
                             <datalist id="airport-list-start-${rowId}"></datalist>
                         </div>
-                        <div class="input-group">
+                        <div class="input-group datetime-group">
                             <label for="date-start-${rowId}">Date:</label>
                             <input id="date-start-${rowId}" type="date" class="time-date-start" oninput="calculateTotal()" value="${today}" required aria-label="Departure Date">
                             <label for="time-start-${rowId}">Time:</label>
                             <input id="time-start-${rowId}" type="time" class="time-time-start" oninput="calculateTotal()" value="${defaultTime}" required aria-label="Departure Time">
                         </div>
                         <div class="utc-preview utc-preview-start" aria-live="polite">Select an airport to see UTC</div>
+                    </div>
+
+                    <div class="route-connector" aria-hidden="true">
+                        <svg width="30" height="30" viewBox="0 0 48 48" fill="none"><path d="M24 4c2 0 3 2 3 5v10l13 8v4l-13-4v10l5 4v3l-8-2-8 2v-3l5-4V27L8 31v-4l13-8V9c0-3 1-5 3-5Z" fill="currentColor"/></svg>
                     </div>
 
                     <!-- End Date/Time/TZ Input -->
@@ -654,7 +953,7 @@
                             <input id="airport-end-${rowId}" type="search" class="airport-input-end" list="airport-list-end-${rowId}" placeholder="Select a country first" disabled autocomplete="off" aria-label="Arrival Airport">
                             <datalist id="airport-list-end-${rowId}"></datalist>
                         </div>
-                        <div class="input-group">
+                        <div class="input-group datetime-group">
                             <label for="date-end-${rowId}">Date:</label>
                             <input id="date-end-${rowId}" type="date" class="time-date-end" oninput="calculateTotal()" value="${today}" required aria-label="Arrival Date">
                             <label for="time-end-${rowId}">Time:</label>
@@ -664,11 +963,11 @@
                     </div>
                 </div>
 
-                <div class="row-right">
+                <div class="leg-result">
+                    <span class="leg-result-label">Leg duration</span>
                     <span class="row-duration">0h 0m</span>
                     <span class="validation-message" aria-live="polite"></span>
                     <button class="confirm-duration-btn" onclick="confirmLongDuration(this)" type="button">Use 24h+ leg</button>
-                    <button class="remove-btn" onclick="removeRow(this)" title="Remove entry">&times;</button>
                 </div>
             `;
             container.appendChild(row);
@@ -759,8 +1058,9 @@
 
                 // --- Display Row Duration ---
                 if (errorMessage) {
-                    durationSpan.innerText = errorMessage;
-                    durationSpan.style.color = 'var(--danger)';
+                    const isIncomplete = errorMessage === 'Missing Data';
+                    durationSpan.innerText = isIncomplete ? 'Awaiting airports' : errorMessage;
+                    durationSpan.style.color = isIncomplete ? 'var(--text-light)' : 'var(--danger)';
                     rowDurationMinutes = 0; 
                     validationMessage.innerText = '';
                     confirmDurationButton.style.display = 'none';
@@ -815,6 +1115,31 @@
             row.dataset.confirmedDuration = row.dataset.durationSignature;
             calculateTotal();
         }
+
+        async function copyResult() {
+            const value = document.getElementById('total-display').innerText;
+            const status = document.getElementById('copy-status');
+            let copied = false;
+            try {
+                await navigator.clipboard.writeText(value);
+                copied = true;
+            } catch {}
+
+            if (!copied) {
+                const fallback = document.createElement('textarea');
+                fallback.value = value;
+                fallback.setAttribute('readonly', '');
+                fallback.style.position = 'fixed';
+                fallback.style.opacity = '0';
+                document.body.appendChild(fallback);
+                fallback.select();
+                copied = document.execCommand('copy');
+                fallback.remove();
+            }
+
+            status.innerText = copied ? 'Copied' : 'Copy unavailable';
+            window.setTimeout(() => { status.innerText = ''; }, 1800);
+        }
         
         function resetRow(rowElement) {
             rowElement.querySelector('.operator-select').value = '1';
@@ -867,6 +1192,7 @@
 
             document.getElementById('confirm-yes').onclick = function() {
                 container.innerHTML = '';
+                nextRowId = 1;
                 addRow();
                 document.body.removeChild(backdrop);
             };
@@ -882,6 +1208,7 @@
             calculateTotal,
             clearAll,
             confirmLongDuration,
+            copyResult,
             removeRow,
             updateAirportInput,
         });
