@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Flight Time Calculator</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #334155;
+            --text-light: #64748b;
+            --border: #cbd5e1;
+            --border-light: #e2e8f0;
+            --input-bg: #f1f5f9;
+        }
+
+        /* Basic reset and font settings */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        /* Main application container */
+        .app-container {
+            background: var(--card);
+            width: 100%;
+            max-width: 700px; /* Slightly wider for the new labels */
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        /* Container for all the time entry rows */
+        #rows-container {
+            margin-bottom: 1rem;
+        }
+
+        /* Styling for a single time entry row */
+        .time-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding: 15px;
+            background: var(--input-bg);
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Operator Select (+ / -) */
+        .operator-select {
+            padding: 10px 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--card);
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 55px;
+            text-align: center;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 6px center;
+            padding-right: 24px;
+            height: 44px;
+            margin-top: 2px;
+        }
+
+        /* Middle section with all inputs */
+        .row-inputs {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-pair {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            background: var(--card);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+        
+        .input-group strong {
+            display: block;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+            flex-shrink: 0;
+            min-width: 60px; /* wider label for better alignment */
+            text-align: right;
+        }
+        
+        .input-group input[type="date"],
+        .input-group input[type="time"],
+        .input-group select {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            flex-grow: 1;
+            min-width: 80px;
+            background: white;
+        }
+        
+        /* Right section with duration and remove button */
+        .row-right {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 60px;
+            flex-shrink: 0;
+        }
+
+        .row-duration {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        /* Row Remove Button (X) */
+        .remove-btn {
+            background: none;
+            border: none;
+            color: var(--border);
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .remove-btn:hover {
+            color: var(--danger);
+        }
+
+        /* Button group styling */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        #add-btn { background-color: var(--primary); color: white; border: none; }
+        #add-btn:hover { background-color: var(--primary-hover); }
+        #clear-btn { background-color: var(--card); color: var(--text-light); border: 1px solid var(--border-light); }
+        #clear-btn:hover { border-color: var(--danger); color: var(--danger); background-color: #fef2f2; }
+
+        /* Result Display Area */
+        .result-area {
+            margin-top: 25px;
+            text-align: center;
+            padding: 25px 20px;
+            border-top: 2px dashed var(--border-light);
+            background-color: #f8fafc;
+            border-radius: 0 0 12px 12px;
+            margin: 2rem -2rem -2rem -2rem; 
+        }
+        .result-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--text-light);
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .result-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-top: 5px;
+            line-height: 1.2;
+        }
+        .result-note {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 8px;
+            min-height: 1.2em;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 550px) {
+            .time-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .operator-select {
+                margin-top: 0;
+                width: 100%;
+                height: auto;
+            }
+            .row-right {
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+                margin-top: 10px;
+                padding-top: 10px;
+                border-top: 1px solid var(--border-light);
+            }
+            .row-duration {
+                order: 1;
+            }
+            .remove-btn {
+                order: 2;
+            }
+            .input-group {
+                flex-wrap: wrap;
+            }
+            .input-group label {
+                min-width: 50px;
+            }
+            .input-group input[type="date"],
+            .input-group input[type="time"] {
+                min-width: 45%;
+            }
+            .input-pair .input-group:last-child {
+                flex-wrap: wrap;
+            }
+            .input-pair .input-group:last-child label {
+                min-width: 60px;
+            }
+            .input-pair .input-group:last-child input[type="date"],
+            .input-pair .input-group:last-child input[type="time"] {
+                flex-basis: calc(50% - 68px); /* Adjust based on label width */
+            }
+        }
+
+        /* Animation for new rows */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h2>Global Flight Time Calculator</h2>
+        
+        <!-- Time entry rows will be injected here by JavaScript -->
+        <div id="rows-container"></div>
+
+        <!-- Action buttons -->
+        <div class="button-group">
+            <button id="add-btn" class="action-btn" onclick="addRow()">+ Add Leg/Block</button>
+            <button id="clear-btn" class="action-btn" onclick="clearAll()">Clear All</button>
+        </div>
+
+        <!-- Result display area -->
+        <div class="result-area">
+            <div class="result-label">Total Flight/Duty Duration (Absolute)</div>
+            <div class="result-value" id="total-display">0h 0m</div>
+            <div class="result-note" id="subtraction-note">Calculations account for Time Zones and Daylight Saving changes.</div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('rows-container');
+        const today = new Date().toISOString().split('T')[0];
+
+        // Comprehensive list of countries and international airport cities mapped to their IANA Time Zones.
+        const countryCityTimeZones = {
+            "Afghanistan": { "Kabul (KBL)": "Asia/Kabul" },
+            "Algeria": { "Algiers (ALG)": "Africa/Algiers" },
+            "Argentina": { 
+                "Buenos Aires (EZE/AEP)": "America/Argentina/Buenos_Aires",
+                "Cordoba (COR)": "America/Argentina/Cordoba"
+            },
+            "Australia": {
+                "Sydney (SYD)": "Australia/Sydney",
+                "Melbourne (MEL)": "Australia/Melbourne",
+                "Perth (PER)": "Australia/Perth",
+                "Brisbane (BNE)": "Australia/Brisbane",
+                "Adelaide (ADL)": "Australia/Adelaide"
+            },
+            "Austria": { "Vienna (VIE)": "Europe/Vienna" },
+            "Bangladesh": { "Dhaka (DAC)": "Asia/Dhaka" },
+            "Belgium": { "Brussels (BRU)": "Europe/Brussels" },
+            "Brazil": { 
+                "Sao Paulo (GRU)": "America/Sao_Paulo",
+                "Rio de Janeiro (GIG)": "America/Sao_Paulo",
+                "Brasília (BSB)": "America/Sao_Paulo",
+                "Manaus (MAO)": "America/Manaus"
+            },
+            "Canada": {
+                "Toronto (YYZ)": "America/Toronto",
+                "Vancouver (YVR)": "America/Vancouver",
+                "Montreal (YUL)": "America/Montreal",
+                "Calgary (YYC)": "America/Edmonton",
+                "Winnipeg (YWG)": "America/Winnipeg",
+                "Halifax (YHZ)": "America/Halifax"
+            },
+            "Chile": { "Santiago (SCL)": "America/Santiago" },
+            "China": {
+                "Beijing (PEK)": "Asia/Shanghai", // China uses a single TZ
+                "Shanghai (PVG)": "Asia/Shanghai"
+            },
+            "Colombia": { "Bogota (BOG)": "America/Bogota" },
+            "Cuba": { "Havana (HAV)": "America/Havana" },
+            "Czechia": { "Prague (PRG)": "Europe/Prague" },
+            "Denmark": { "Copenhagen (CPH)": "Europe/Copenhagen" },
+            "Ecuador": { "Quito (UIO)": "America/Guayaquil" },
+            "Egypt": { "Cairo (CAI)": "Africa/Cairo" },
+            "Finland": { "Helsinki (HEL)": "Europe/Helsinki" },
+            "Fiji": { "Nadi (NAN)": "Pacific/Fiji" },
+            "France": { 
+                "Paris (CDG/ORY)": "Europe/Paris",
+                "Marseille (MRS)": "Europe/Paris"
+            },
+            "Germany": { 
+                "Frankfurt (FRA)": "Europe/Berlin",
+                "Munich (MUC)": "Europe/Berlin"
+            },
+            "Ghana": { "Accra (ACC)": "Africa/Accra" },
+            "Greece": { "Athens (ATH)": "Europe/Athens" },
+            "Greenland": { "Nuuk (GOH)": "America/Nuuk" },
+            "Hong Kong": { "Hong Kong (HKG)": "Asia/Hong_Kong" },
+            "Hungary": { "Budapest (BUD)": "Europe/Budapest" },
+            "Iceland": { "Reykjavik (KEF)": "Atlantic/Reykjavik" },
+            "India": {
+                "Mumbai (BOM)": "Asia/Kolkata",
+                "Delhi (DEL)": "Asia/Kolkata",
+                "Bangalore (BLR)": "Asia/Kolkata",
+                "Chennai (MAA)": "Asia/Kolkata",
+                "Kolkata (CCU)": "Asia/Kolkata",
+                "Hyderabad (HYD)": "Asia/Kolkata"
+            },
+            "Indonesia": {
+                "Jakarta (CGK)": "Asia/Jakarta",
+                "Denpasar (DPS)": "Asia/Makassar" 
+            },
+            "Ireland": { "Dublin (DUB)": "Europe/Dublin" },
+            "Israel": { "Tel Aviv (TLV)": "Asia/Jerusalem" },
+            "Italy": { 
+                "Rome (FCO)": "Europe/Rome",
+                "Milan (MXP)": "Europe/Rome"
+            },
+            "Japan": {
+                "Tokyo (NRT/HND)": "Asia/Tokyo",
+                "Osaka (KIX)": "Asia/Tokyo",
+                "Sapporo (CTS)": "Asia/Tokyo"
+            },
+            "Kazakhstan": { "Almaty (ALA)": "Asia/Almaty" },
+            "Kenya": { "Nairobi (NBO)": "Africa/Nairobi" },
+            "Malaysia": { "Kuala Lumpur (KUL)": "Asia/Kuala_Lumpur" },
+            "Mexico": {
+                "Mexico City (MEX)": "America/Mexico_City",
+                "Cancun (CUN)": "America/Cancun"
+            },
+            "Morocco": { "Casablanca (CMN)": "Africa/Casablanca" },
+            "Nepal": { "Kathmandu (KTM)": "Asia/Kathmandu" },
+            "Netherlands": { "Amsterdam (AMS)": "Europe/Amsterdam" },
+            "New Zealand": { "Auckland (AKL)": "Pacific/Auckland" },
+            "Nigeria": { "Lagos (LOS)": "Africa/Lagos" },
+            "Norway": { "Oslo (OSL)": "Europe/Oslo" },
+            "Pakistan": { "Karachi (KHI)": "Asia/Karachi" },
+            "Peru": { "Lima (LIM)": "America/Lima" },
+            "Philippines": { "Manila (MNL)": "Asia/Manila" },
+            "Poland": { "Warsaw (WAW)": "Europe/Warsaw" },
+            "Portugal": { 
+                "Lisbon (LIS)": "Europe/Lisbon",
+                "Azores (PDL)": "Atlantic/Azores"
+            },
+            "Qatar": { "Doha (DOH)": "Asia/Qatar" },
+            "Russia": {
+                "Moscow (SVO/DME)": "Europe/Moscow",
+                "Vladivostok (VVO)": "Asia/Vladivostok"
+            },
+            "Samoa": { "Apia (APW)": "Pacific/Apia" },
+            "Saudi Arabia": {
+                "Riyadh (RUH)": "Asia/Riyadh",
+                "Jeddah (JED)": "Asia/Riyadh"
+            },
+            "Singapore": { "Singapore (SIN)": "Asia/Singapore" },
+            "South Africa": {
+                "Johannesburg (JNB)": "Africa/Johannesburg",
+                "Cape Town (CPT)": "Africa/Johannesburg"
+            },
+            "South Korea": { "Seoul (ICN/GMP)": "Asia/Seoul" },
+            "Spain": { 
+                "Madrid (MAD)": "Europe/Madrid",
+                "Barcelona (BCN)": "Europe/Madrid",
+                "Canary Islands (TFN)": "Atlantic/Canary"
+            },
+            "Sweden": { "Stockholm (ARN)": "Europe/Stockholm" },
+            "Switzerland": { "Zurich (ZRH)": "Europe/Zurich", "Geneva (GVA)": "Europe/Zurich" },
+            "Taiwan": { "Taipei (TPE)": "Asia/Taipei" },
+            "Thailand": {
+                "Bangkok (BKK/DMK)": "Asia/Bangkok",
+                "Phuket (HKT)": "Asia/Bangkok",
+                "Chiang Mai (CNX)": "Asia/Bangkok"
+            },
+            "Turkey": { 
+                "Istanbul (IST)": "Europe/Istanbul" // FIX: Corrected typo from "Istanbul (IST")" to "Istanbul (IST)"
+            },
+            "UAE": {
+                "Dubai (DXB)": "Asia/Dubai",
+                "Abu Dhabi (AUH)": "Asia/Dubai"
+            },
+            "United Kingdom": {
+                "London (LHR/LGW)": "Europe/London",
+                "Manchester (MAN)": "Europe/London"
+            },
+            "United States": {
+                "New York (JFK/LGA)": "America/New_York",
+                "Chicago (ORD)": "America/Chicago",
+                "Denver (DEN)": "America/Denver",
+                "Los Angeles (LAX)": "America/Los_Angeles",
+                "Dallas (DFW)": "America/Chicago",
+                "Atlanta (ATL)": "America/New_York",
+                "Miami (MIA)": "America/New_York",
+                "Seattle (SEA)": "America/Los_Angeles",
+                "Anchorage (ANC)": "America/Anchorage",
+                "Honolulu (HNL)": "Pacific/Honolulu"
+            },
+            "Uzbekistan": { "Tashkent (TAS)": "Asia/Tashkent" },
+            "Venezuela": { "Caracas (CCS)": "America/Caracas" },
+            "Vietnam": { 
+                "Ho Chi Minh City (SGN)": "Asia/Ho_Chi_Minh",
+                "Hanoi (HAN)": "Asia/Ho_Chi_Minh"
+            }
+        };
+        
+        // Alphabetical list of countries for the country dropdown
+        const sortedCountries = Object.keys(countryCityTimeZones).sort();
+        const defaultCountry = "United States";
+        const defaultCity = "New York (JFK/LGA)";
+        const defaultTimeZone = "America/New_York";
+
+        /**
+         * Generates the HTML options for the country dropdown.
+         */
+        function getCountryOptions() {
+            let options = '<option value="" disabled selected>Select Country</option>';
+            options += sortedCountries.map(country => 
+                `<option value="${country}">${country}</option>`
+            ).join('');
+            return options;
+        }
+
+        /**
+         * Generates the HTML options for the city dropdown based on the selected country.
+         */
+        function getCityOptions(country) {
+            let options = '<option value="" disabled selected>Select Airport/City</option>';
+            const cities = countryCityTimeZones[country];
+            if (cities) {
+                for (const city in cities) {
+                    // The value is the IANA Time Zone, which is needed for calculation
+                    options += `<option value="${cities[city]}">${city}</option>`;
+                }
+            }
+            return options;
+        }
+
+        /**
+         * Updates the City dropdown when a new Country is selected.
+         */
+        function updateCitySelect(countrySelect, type) {
+            const country = countrySelect.value;
+            const row = countrySelect.closest('.time-row');
+            
+            // Determine which city select to update (start or end)
+            const citySelect = row.querySelector(`.city-select-${type}`);
+
+            citySelect.innerHTML = getCityOptions(country);
+            
+            // Attempt to select a default city if the country is the default country
+            if (country === defaultCountry) {
+                const defaultCityTZ = countryCityTimeZones[defaultCountry][defaultCity];
+                if (citySelect.querySelector(`option[value="${defaultCityTZ}"]`)) {
+                    citySelect.value = defaultCityTZ;
+                }
+            } else {
+                 // Automatically select the first city in the list for convenience
+                const firstCityOption = citySelect.querySelector('option:not([disabled])');
+                if (firstCityOption) {
+                    citySelect.value = firstCityOption.value;
+                }
+            }
+            
+            calculateTotal();
+        }
+
+        /**
+         * Creates and adds a new time entry row to the DOM.
+         */
+        function addRow() {
+            const row = document.createElement('div');
+            row.className = 'time-row';
+            const defaultTime = '09:00';
+
+            // Find the default time zone value based on the default country/city
+            let initialCityOptions = getCityOptions(defaultCountry);
+
+            // Ensure the default city/TZ is selected if available
+            initialCityOptions = initialCityOptions.replace(
+                `<option value="${defaultTimeZone}">${defaultCity}</option>`,
+                `<option value="${defaultTimeZone}" selected>${defaultCity}</option>`
+            );
+
+
+            row.innerHTML = `
+                <select class="operator-select" onchange="calculateTotal()" aria-label="Operation">
+                    <option value="1">+</option>
+                    <option value="-1">-</option>
+                </select>
+
+                <div class="row-inputs">
+                    <!-- Start Date/Time/TZ Input -->
+                    <div class="input-pair">
+                        <strong style="color: var(--primary);">Departure Details</strong>
+                        <div class="input-group">
+                            <label for="country-start">Country:</label>
+                            <select id="country-start" class="country-select-start" onchange="updateCitySelect(this, 'start')" aria-label="Departure Country">
+                                ${getCountryOptions()}
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="city-start">Airport/City:</label>
+                            <!-- City select value holds the Time Zone (TZ) -->
+                            <select id="city-start" class="city-select-start" onchange="calculateTotal()" aria-label="Departure Airport (Timezone)">
+                                ${initialCityOptions}
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="date-start">Date:</label>
+                            <input id="date-start" type="date" class="time-date-start" oninput="calculateTotal()" value="${today}" required aria-label="Departure Date">
+                            <label for="time-start">Time:</label>
+                            <input id="time-start" type="time" class="time-time-start" oninput="calculateTotal()" value="${defaultTime}" required aria-label="Departure Time">
+                        </div>
+                    </div>
+
+                    <!-- End Date/Time/TZ Input -->
+                    <div class="input-pair">
+                        <strong style="color: var(--primary);">Arrival Details</strong>
+                        <div class="input-group">
+                            <label for="country-end">Country:</label>
+                            <select id="country-end" class="country-select-end" onchange="updateCitySelect(this, 'end')" aria-label="Arrival Country">
+                                ${getCountryOptions()}
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="city-end">Airport/City:</label>
+                            <!-- City select value holds the Time Zone (TZ) -->
+                            <select id="city-end" class="city-select-end" onchange="calculateTotal()" aria-label="Arrival Airport (Timezone)">
+                                ${initialCityOptions}
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="date-end">Date:</label>
+                            <input id="date-end" type="date" class="time-date-end" oninput="calculateTotal()" value="${today}" required aria-label="Arrival Date">
+                            <label for="time-end">Time:</label>
+                            <input id="time-end" type="time" class="time-time-end" oninput="calculateTotal()" value="${defaultTime}" required aria-label="Arrival Time">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-right">
+                    <span class="row-duration">0h 0m</span>
+                    <button class="remove-btn" onclick="removeRow(this)" title="Remove entry">&times;</button>
+                </div>
+            `;
+            container.appendChild(row);
+            
+            // Set initial selected values 
+            const startCountrySelect = row.querySelector('.country-select-start');
+            const endCountrySelect = row.querySelector('.country-select-end');
+            
+            if (startCountrySelect && endCountrySelect) {
+                startCountrySelect.value = defaultCountry;
+                endCountrySelect.value = defaultCountry;
+            }
+            
+            calculateTotal();
+        }
+
+        /**
+         * Helper function to parse Date, Time, and Timezone into a single absolute UTC timestamp (milliseconds).
+         * This calculation is critical for handling DST changes correctly across time zones.
+         */
+        function parseDateTimeWithTimezone(dateStr, timeStr, timeZone) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const [hour, minute] = timeStr.split(':').map(Number);
+
+            // 1. Create a timestamp for the wall-clock time, interpreted as UTC.
+            // This is a neutral point from which to calculate the offset.
+            const inputUtcTimestamp = Date.UTC(year, month - 1, day, hour, minute, 0);
+
+            // 2. Find the UTC offset (e.g., "GMT+5:30") for the target timezone at that time.
+            const referenceDate = new Date(inputUtcTimestamp);
+
+            const options = { timeZone: timeZone, timeZoneName: 'shortOffset', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric' };
+            const formatter = new Intl.DateTimeFormat('en-US', options);
+            
+            const formattedParts = formatter.formatToParts(referenceDate);
+            const offsetPart = formattedParts.find(p => p.type === 'timeZoneName')?.value;
+
+            if (!offsetPart) {
+                console.error(`TZ offset could not be retrieved via Intl.DateTimeFormat for ${timeZone}.`);
+                return null;
+            }
+            
+            // 3. Parse the offset string (e.g., "GMT-4" or "UTC+5:30") into minutes.
+            const match = offsetPart.match(/([+-])(\d+):?(\d+)?/);
+            let offsetMinutes = 0;
+            if (match) {
+                // + means ahead of UTC, - means behind (standard TZ notation)
+                const sign = match[1] === '+' ? 1 : -1; 
+                const hours = parseInt(match[2], 10);
+                const minutes = parseInt(match[3] || '0', 10);
+                offsetMinutes = sign * (hours * 60 + minutes);
+            } else {
+                // Fallback for simple offsets like "GMT" or "UTC"
+                if (offsetPart === "GMT" || offsetPart === "UTC") {
+                    offsetMinutes = 0;
+                } else {
+                    console.error(`Failed to parse numeric offset from string: ${offsetPart}. Returning null.`);
+                    return null;
+                }
+            }
+            
+            // 4. The absolute UTC timestamp is the input UTC timestamp MINUS the target timezone's offset.
+            // This corrects the wall-clock time to its absolute UTC equivalent, handling DST correctly.
+            const offsetMs = offsetMinutes * 60 * 1000;
+            return inputUtcTimestamp - offsetMs;
+        }
+
+        /**
+         * Calculates the total time from all rows and updates the display.
+         */
+        function calculateTotal() {
+            let grandTotalMinutes = 0;
+            const rows = document.getElementsByClassName('time-row');
+
+            for (let row of rows) {
+                const op = parseInt(row.querySelector('.operator-select').value, 10);
+                const durationSpan = row.querySelector('.row-duration');
+                
+                // Get Date/Time
+                const startDateStr = row.querySelector('.time-date-start').value;
+                const startTimeStr = row.querySelector('.time-time-start').value;
+                const endDateStr = row.querySelector('.time-date-end').value;
+                const endTimeStr = row.querySelector('.time-time-end').value;
+
+                // Get TimeZone (value is stored in the City dropdown)
+                const startTZ = row.querySelector('.city-select-start').value;
+                const endTZ = row.querySelector('.city-select-end').value;
+
+                let rowDurationMinutes = 0;
+                let hasError = false;
+                
+                // Only proceed if all core input fields have valid values
+                if (startDateStr && startTimeStr && endDateStr && endTimeStr && startTZ && endTZ && startTZ !== "" && endTZ !== "") {
+                    try {
+                        // Get absolute UTC milliseconds for start and end points
+                        const startTimestamp = parseDateTimeWithTimezone(startDateStr, startTimeStr, startTZ);
+                        const endTimestamp = parseDateTimeWithTimezone(endDateStr, endTimeStr, endTZ);
+
+                        if (startTimestamp === null || endTimestamp === null) {
+                            hasError = true;
+                        } else {
+                            // Duration in minutes
+                            rowDurationMinutes = Math.floor((endTimestamp - startTimestamp) / 60000); 
+                        }
+                    } catch (e) {
+                        console.error("Calculation Error:", e);
+                        hasError = true;
+                    }
+                } else {
+                    hasError = true;
+                }
+
+                // --- Display Row Duration ---
+                if (hasError) {
+                    durationSpan.innerText = 'Missing Data';
+                    durationSpan.style.color = 'var(--danger)';
+                    rowDurationMinutes = 0; 
+                } else {
+                    const absRowMins = Math.abs(rowDurationMinutes);
+                    const rowH = Math.floor(absRowMins / 60);
+                    const rowM = absRowMins % 60;
+                    durationSpan.innerText = `${rowH}h ${rowM}m`;
+                    durationSpan.style.color = 'var(--primary)';
+                }
+                
+                // Add or subtract from grand total
+                grandTotalMinutes += (op * rowDurationMinutes);
+            }
+
+            // --- Display Grand Total ---
+            const absTotalMinutes = Math.abs(grandTotalMinutes);
+            const finalHours = Math.floor(absTotalMinutes / 60);
+            const finalMinutes = absTotalMinutes % 60;
+
+            document.getElementById('total-display').innerText = `${finalHours}h ${finalMinutes}m`;
+            
+            const noteElement = document.getElementById('subtraction-note');
+            if (grandTotalMinutes < 0) {
+                noteElement.innerText = "(Result is a negative difference)";
+            } else {
+                noteElement.innerText = "Calculations account for Time Zones and Daylight Saving changes."; 
+            }
+        }
+        
+        // --- Utility functions ---
+
+        function removeRow(btn) {
+            const rows = document.getElementsByClassName('time-row');
+            if (rows.length > 1) {
+                btn.closest('.time-row').remove();
+            } else {
+                // If only one row, reset it instead of removing
+                resetRow(btn.closest('.time-row'));
+            }
+            calculateTotal();
+        }
+        
+        function resetRow(rowElement) {
+            rowElement.querySelector('.operator-select').value = '1';
+            rowElement.querySelector('.time-date-start').value = today;
+            rowElement.querySelector('.time-time-start').value = '09:00';
+            rowElement.querySelector('.country-select-start').value = defaultCountry;
+            updateCitySelect(rowElement.querySelector('.country-select-start'), 'start');
+            rowElement.querySelector('.time-date-end').value = today;
+            rowElement.querySelector('.time-time-end').value = '09:00';
+            rowElement.querySelector('.country-select-end').value = defaultCountry;
+            updateCitySelect(rowElement.querySelector('.country-select-end'), 'end');
+
+            rowElement.querySelector('.row-duration').innerText = '0h 0m';
+        }
+
+        function clearAll() {
+            if (document.getElementById('modal-backdrop')) return; // Prevent multiple modals
+
+            const backdrop = document.createElement('div');
+            backdrop.id = 'modal-backdrop';
+            backdrop.style = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); z-index: 100;
+                display: flex; align-items: center; justify-content: center;
+            `;
+
+            const modal = document.createElement('div');
+            modal.id = 'confirm-modal';
+            modal.style = `
+                background: white; padding: 20px; border-radius: 8px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: center; max-width: 300px;
+            `;
+            
+            modal.innerHTML = `
+                <p style="font-size: 1.1rem; margin-bottom: 20px;">Are you sure you want to clear all flight legs?</p>
+                <button id="confirm-yes" style="padding: 8px 16px; border: none; border-radius: 6px; background: var(--danger); color: white; cursor: pointer; margin-right: 10px;">Yes, Clear All</button>
+                <button id="confirm-no" style="padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer;">Cancel</button>
+            `;
+
+            backdrop.appendChild(modal);
+            document.body.appendChild(backdrop);
+
+            document.getElementById('confirm-yes').onclick = function() {
+                container.innerHTML = '';
+                addRow();
+                document.body.removeChild(backdrop);
+            };
+
+            document.getElementById('confirm-no').onclick = function() {
+                document.body.removeChild(backdrop);
+            };
+        }
+
+        // Initialize the app with one row when the page loads
+        document.addEventListener('DOMContentLoaded', addRow);
+    </script>
+    <script type="module" src="/src/tracking.js"></script>
+
+</body>
+</html>
