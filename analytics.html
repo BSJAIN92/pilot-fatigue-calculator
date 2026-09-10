@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Pilot Calculator Analytics</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 24px; background: #f8fafc; color: #1e293b; font-family: Inter, system-ui, sans-serif; }
+      main { max-width: 1000px; margin: auto; }
+      form, section { background: white; border-radius: 12px; box-shadow: 0 4px 16px #0f172a12; margin-bottom: 20px; padding: 20px; }
+      input, button { border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; padding: 10px; }
+      button { background: #2563eb; color: white; cursor: pointer; }
+      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+      .card { background: #eff6ff; border-radius: 9px; padding: 15px; }
+      .card strong { display: block; font-size: 1.8rem; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border-bottom: 1px solid #e2e8f0; padding: 9px; text-align: left; }
+      .error { color: #dc2626; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Pilot Calculator Analytics</h1>
+      <form id="login-form">
+        <label for="admin-key">Dashboard password</label>
+        <input id="admin-key" type="password" required autocomplete="current-password">
+        <button type="submit">Open dashboard</button>
+        <p id="error" class="error" aria-live="polite"></p>
+      </form>
+      <div id="dashboard" hidden>
+        <section><div id="summary" class="cards"></div></section>
+        <section><h2>Popular routes</h2><table><thead><tr><th>Departure</th><th>Arrival</th><th>Updates</th></tr></thead><tbody id="routes"></tbody></table></section>
+        <section><h2>Recent activity</h2><table><thead><tr><th>Activity</th><th>Time</th></tr></thead><tbody id="events"></tbody></table></section>
+        <section><h2>Latest calculation tests</h2><p id="tests"></p></section>
+      </div>
+    </main>
+    <script type="module" src="/src/admin-dashboard.js"></script>
+  </body>
+</html>

@@ -56,17 +56,31 @@ if (convexUrl) {
       const legs = [...document.querySelectorAll(".time-row")].map((row) => ({
         operator: row.querySelector(".operator-select").value === "-1" ? "subtract" : "add",
         departureCountry: row.querySelector(".country-select-start").value,
-        departureAirport: row.querySelector(".city-select-start").selectedOptions[0]?.text ?? "",
-        departureTimeZone: row.querySelector(".city-select-start").value,
+        departureAirport: row.querySelector(".airport-input-start").value,
+        departureTimeZone: row.querySelector(".airport-input-start").dataset.timeZone ?? "",
         departureDate: row.querySelector(".time-date-start").value,
         departureTime: row.querySelector(".time-time-start").value,
         arrivalCountry: row.querySelector(".country-select-end").value,
-        arrivalAirport: row.querySelector(".city-select-end").selectedOptions[0]?.text ?? "",
-        arrivalTimeZone: row.querySelector(".city-select-end").value,
+        arrivalAirport: row.querySelector(".airport-input-end").value,
+        arrivalTimeZone: row.querySelector(".airport-input-end").dataset.timeZone ?? "",
         arrivalDate: row.querySelector(".time-date-end").value,
         arrivalTime: row.querySelector(".time-time-end").value,
         duration: row.querySelector(".row-duration").textContent,
       }));
+
+      const hasIncompleteLeg = legs.some((leg) =>
+        !leg.departureCountry ||
+        !leg.departureAirport ||
+        !leg.departureTimeZone ||
+        !leg.departureDate ||
+        !leg.departureTime ||
+        !leg.arrivalCountry ||
+        !leg.arrivalAirport ||
+        !leg.arrivalTimeZone ||
+        !leg.arrivalDate ||
+        !leg.arrivalTime
+      );
+      if (hasIncompleteLeg) return;
 
       track("calculation_updated", {
         legCount: legs.length,

@@ -9,6 +9,25 @@ export default defineSchema({
     visitCount: v.number(),
   }).index("by_anonymous_id", ["anonymousId"]),
 
+  analyticsSummary: defineTable({
+    key: v.string(),
+    anonymousDevices: v.number(),
+    pageViews: v.number(),
+    calculationUpdates: v.number(),
+    totalEvents: v.number(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
+
+  routeStats: defineTable({
+    routeKey: v.string(),
+    departureAirport: v.string(),
+    arrivalAirport: v.string(),
+    count: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_route_key", ["routeKey"])
+    .index("by_count", ["count"]),
+
   activityEvents: defineTable({
     anonymousId: v.string(),
     sessionId: v.string(),
@@ -20,4 +39,25 @@ export default defineSchema({
     .index("by_anonymous_id", ["anonymousId"])
     .index("by_event", ["event"])
     .index("by_created_at", ["createdAt"]),
+
+  testRuns: defineTable({
+    runId: v.string(),
+    source: v.string(),
+    status: v.union(v.literal("passed"), v.literal("failed")),
+    startedAt: v.number(),
+    completedAt: v.number(),
+    timezoneDataVersion: v.string(),
+    passed: v.number(),
+    failed: v.number(),
+  }).index("by_run_id", ["runId"]),
+
+  testResults: defineTable({
+    runId: v.string(),
+    name: v.string(),
+    status: v.union(v.literal("passed"), v.literal("failed")),
+    expectedMinutes: v.number(),
+    actualMinutes: v.union(v.number(), v.null()),
+    error: v.string(),
+    input: v.any(),
+  }).index("by_run_id", ["runId"]),
 });

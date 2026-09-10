@@ -111,6 +111,13 @@
             background: var(--card);
         }
 
+        .utc-preview {
+            color: var(--text-light);
+            font-size: 0.8rem;
+            min-height: 1.2em;
+            text-align: right;
+        }
+
         .input-group {
             display: flex;
             gap: 8px;
@@ -138,6 +145,7 @@
         
         .input-group input[type="date"],
         .input-group input[type="time"],
+        .input-group input[type="search"],
         .input-group select {
             padding: 10px;
             border: 1px solid var(--border);
@@ -154,7 +162,7 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
-            width: 60px;
+            width: 120px;
             flex-shrink: 0;
         }
 
@@ -165,6 +173,24 @@
             white-space: nowrap;
             text-align: center;
             margin-top: 4px;
+        }
+
+        .validation-message {
+            color: var(--danger);
+            font-size: 0.75rem;
+            line-height: 1.2;
+            text-align: center;
+        }
+
+        .confirm-duration-btn {
+            background: #fff7ed;
+            border: 1px solid #fb923c;
+            border-radius: 6px;
+            color: #9a3412;
+            cursor: pointer;
+            display: none;
+            font-size: 0.72rem;
+            padding: 5px 7px;
         }
 
         /* Row Remove Button (X) */
@@ -305,15 +331,20 @@
 
         <!-- Result display area -->
         <div class="result-area">
-            <div class="result-label">Total Flight/Duty Duration (Absolute)</div>
+            <div class="result-label">Total Entered Duration</div>
             <div class="result-value" id="total-display">0h 0m</div>
             <div class="result-note" id="subtraction-note">Calculations account for Time Zones and Daylight Saving changes.</div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { formatLocalDate } from '/src/local-date.js';
+        import { validateLegDuration } from '/src/duration-validation.js';
+        import { getTimezoneDataVersion, localTimeToEpochMilliseconds } from '/src/timezone.js';
+        import { formatUtcDateTime } from '/src/utc-format.js';
+
         const container = document.getElementById('rows-container');
-        const today = new Date().toISOString().split('T')[0];
+        const today = formatLocalDate(new Date());
 
         // Comprehensive list of countries and international airport cities mapped to their IANA Time Zones.
         const countryCityTimeZones = {
@@ -478,19 +509,33 @@
             }
         };
         
-        // Alphabetical list of countries for the country dropdown
-        const sortedCountries = Object.keys(countryCityTimeZones).sort();
-        const defaultCountry = "United States";
-        const defaultCity = "New York (JFK/LGA)";
-        const defaultTimeZone = "America/New_York";
+        // The complete airport catalogue is generated from OurAirports data.
+        let airportCountries = [];
+        const airportsByCountry = new Map();
+        let nextRowId = 1;
+
+        async function loadAirportCountries() {
+            const response = await fetch('/airports/index.json');
+            if (!response.ok) throw new Error('Airport country list could not be loaded.');
+            airportCountries = await response.json();
+        }
+
+        async function loadCountryAirports(countryCode) {
+            if (!airportsByCountry.has(countryCode)) {
+                const response = await fetch(`/airports/${countryCode}.json`);
+                if (!response.ok) throw new Error('Airport list could not be loaded.');
+                airportsByCountry.set(countryCode, await response.json());
+            }
+            return airportsByCountry.get(countryCode);
+        }
 
         /**
          * Generates the HTML options for the country dropdown.
          */
         function getCountryOptions() {
             let options = '<option value="" disabled selected>Select Country</option>';
-            options += sortedCountries.map(country => 
-                `<option value="${country}">${country}</option>`
+            options += airportCountries.map(country => 
+                `<option value="${country.code}">${country.name}</option>`
             ).join('');
             return options;
         }
@@ -498,44 +543,58 @@
         /**
          * Generates the HTML options for the city dropdown based on the selected country.
          */
-        function getCityOptions(country) {
-            let options = '<option value="" disabled selected>Select Airport/City</option>';
-            const cities = countryCityTimeZones[country];
-            if (cities) {
-                for (const city in cities) {
-                    // The value is the IANA Time Zone, which is needed for calculation
-                    options += `<option value="${cities[city]}">${city}</option>`;
-                }
-            }
-            return options;
+        function airportLabel(airport) {
+            const codes = airport.codes.length ? `${airport.codes.join('/')} — ` : '';
+            const municipality = airport.municipality ? `, ${airport.municipality}` : '';
+            return `${codes}${airport.name}${municipality}`;
         }
 
-        /**
-         * Updates the City dropdown when a new Country is selected.
-         */
-        function updateCitySelect(countrySelect, type) {
+        function showAirportMatches(input, airports) {
+            const query = input.value.trim().toLocaleLowerCase();
+            const exactAirport = airports.find(airport => airportLabel(airport) === input.value);
+            const matches = exactAirport ? [exactAirport] : airports.filter(airport => {
+                if (!query) return true;
+                return airport.name.toLocaleLowerCase().includes(query) ||
+                    airport.municipality.toLocaleLowerCase().includes(query) ||
+                    airport.codes.some(code => code.toLocaleLowerCase().includes(query));
+            }).slice(0, 75);
+
+            const datalist = document.getElementById(input.getAttribute('list'));
+            const recordsByLabel = new Map();
+            datalist.innerHTML = matches.map(airport => {
+                const label = airportLabel(airport);
+                recordsByLabel.set(label, airport);
+                return `<option value="${label.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}"></option>`;
+            }).join('');
+            input.airportRecords = recordsByLabel;
+
+            const selectedAirport = recordsByLabel.get(input.value);
+            input.dataset.timeZone = selectedAirport?.timeZone || '';
+            input.dataset.airportName = selectedAirport?.name || '';
+            input.dataset.airportCodes = selectedAirport?.codes.join('/') || '';
+            calculateTotal();
+        }
+
+        async function updateAirportInput(countrySelect, type) {
             const country = countrySelect.value;
             const row = countrySelect.closest('.time-row');
-            
-            // Determine which city select to update (start or end)
-            const citySelect = row.querySelector(`.city-select-${type}`);
+            const airportInput = row.querySelector(`.airport-input-${type}`);
+            airportInput.value = '';
+            airportInput.dataset.timeZone = '';
+            airportInput.placeholder = 'Loading airports…';
+            airportInput.disabled = true;
 
-            citySelect.innerHTML = getCityOptions(country);
-            
-            // Attempt to select a default city if the country is the default country
-            if (country === defaultCountry) {
-                const defaultCityTZ = countryCityTimeZones[defaultCountry][defaultCity];
-                if (citySelect.querySelector(`option[value="${defaultCityTZ}"]`)) {
-                    citySelect.value = defaultCityTZ;
-                }
-            } else {
-                 // Automatically select the first city in the list for convenience
-                const firstCityOption = citySelect.querySelector('option:not([disabled])');
-                if (firstCityOption) {
-                    citySelect.value = firstCityOption.value;
-                }
+            try {
+                const airports = await loadCountryAirports(country);
+                airportInput.countryAirports = airports;
+                airportInput.disabled = false;
+                airportInput.placeholder = 'Search code, airport, or city';
+                showAirportMatches(airportInput, airports);
+                airportInput.focus();
+            } catch (error) {
+                airportInput.placeholder = 'Airport list unavailable';
+                console.error(error);
             }
-            
             calculateTotal();
         }
 
@@ -546,15 +605,7 @@
             const row = document.createElement('div');
             row.className = 'time-row';
             const defaultTime = '09:00';
-
-            // Find the default time zone value based on the default country/city
-            let initialCityOptions = getCityOptions(defaultCountry);
-
-            // Ensure the default city/TZ is selected if available
-            initialCityOptions = initialCityOptions.replace(
-                `<option value="${defaultTimeZone}">${defaultCity}</option>`,
-                `<option value="${defaultTimeZone}" selected>${defaultCity}</option>`
-            );
+            const rowId = nextRowId++;
 
 
             row.innerHTML = `
@@ -568,65 +619,62 @@
                     <div class="input-pair">
                         <strong style="color: var(--primary);">Departure Details</strong>
                         <div class="input-group">
-                            <label for="country-start">Country:</label>
-                            <select id="country-start" class="country-select-start" onchange="updateCitySelect(this, 'start')" aria-label="Departure Country">
+                            <label for="country-start-${rowId}">Country:</label>
+                            <select id="country-start-${rowId}" class="country-select-start" onchange="updateAirportInput(this, 'start')" aria-label="Departure Country">
                                 ${getCountryOptions()}
                             </select>
                         </div>
                         <div class="input-group">
-                            <label for="city-start">Airport/City:</label>
+                            <label for="airport-start-${rowId}">Airport:</label>
                             <!-- City select value holds the Time Zone (TZ) -->
-                            <select id="city-start" class="city-select-start" onchange="calculateTotal()" aria-label="Departure Airport (Timezone)">
-                                ${initialCityOptions}
-                            </select>
+                            <input id="airport-start-${rowId}" type="search" class="airport-input-start" list="airport-list-start-${rowId}" placeholder="Select a country first" disabled autocomplete="off" aria-label="Departure Airport">
+                            <datalist id="airport-list-start-${rowId}"></datalist>
                         </div>
                         <div class="input-group">
-                            <label for="date-start">Date:</label>
-                            <input id="date-start" type="date" class="time-date-start" oninput="calculateTotal()" value="${today}" required aria-label="Departure Date">
-                            <label for="time-start">Time:</label>
-                            <input id="time-start" type="time" class="time-time-start" oninput="calculateTotal()" value="${defaultTime}" required aria-label="Departure Time">
+                            <label for="date-start-${rowId}">Date:</label>
+                            <input id="date-start-${rowId}" type="date" class="time-date-start" oninput="calculateTotal()" value="${today}" required aria-label="Departure Date">
+                            <label for="time-start-${rowId}">Time:</label>
+                            <input id="time-start-${rowId}" type="time" class="time-time-start" oninput="calculateTotal()" value="${defaultTime}" required aria-label="Departure Time">
                         </div>
+                        <div class="utc-preview utc-preview-start" aria-live="polite">Select an airport to see UTC</div>
                     </div>
 
                     <!-- End Date/Time/TZ Input -->
                     <div class="input-pair">
                         <strong style="color: var(--primary);">Arrival Details</strong>
                         <div class="input-group">
-                            <label for="country-end">Country:</label>
-                            <select id="country-end" class="country-select-end" onchange="updateCitySelect(this, 'end')" aria-label="Arrival Country">
+                            <label for="country-end-${rowId}">Country:</label>
+                            <select id="country-end-${rowId}" class="country-select-end" onchange="updateAirportInput(this, 'end')" aria-label="Arrival Country">
                                 ${getCountryOptions()}
                             </select>
                         </div>
                         <div class="input-group">
-                            <label for="city-end">Airport/City:</label>
+                            <label for="airport-end-${rowId}">Airport:</label>
                             <!-- City select value holds the Time Zone (TZ) -->
-                            <select id="city-end" class="city-select-end" onchange="calculateTotal()" aria-label="Arrival Airport (Timezone)">
-                                ${initialCityOptions}
-                            </select>
+                            <input id="airport-end-${rowId}" type="search" class="airport-input-end" list="airport-list-end-${rowId}" placeholder="Select a country first" disabled autocomplete="off" aria-label="Arrival Airport">
+                            <datalist id="airport-list-end-${rowId}"></datalist>
                         </div>
                         <div class="input-group">
-                            <label for="date-end">Date:</label>
-                            <input id="date-end" type="date" class="time-date-end" oninput="calculateTotal()" value="${today}" required aria-label="Arrival Date">
-                            <label for="time-end">Time:</label>
-                            <input id="time-end" type="time" class="time-time-end" oninput="calculateTotal()" value="${defaultTime}" required aria-label="Arrival Time">
+                            <label for="date-end-${rowId}">Date:</label>
+                            <input id="date-end-${rowId}" type="date" class="time-date-end" oninput="calculateTotal()" value="${today}" required aria-label="Arrival Date">
+                            <label for="time-end-${rowId}">Time:</label>
+                            <input id="time-end-${rowId}" type="time" class="time-time-end" oninput="calculateTotal()" value="${defaultTime}" required aria-label="Arrival Time">
                         </div>
+                        <div class="utc-preview utc-preview-end" aria-live="polite">Select an airport to see UTC</div>
                     </div>
                 </div>
 
                 <div class="row-right">
                     <span class="row-duration">0h 0m</span>
+                    <span class="validation-message" aria-live="polite"></span>
+                    <button class="confirm-duration-btn" onclick="confirmLongDuration(this)" type="button">Use 24h+ leg</button>
                     <button class="remove-btn" onclick="removeRow(this)" title="Remove entry">&times;</button>
                 </div>
             `;
             container.appendChild(row);
             
-            // Set initial selected values 
-            const startCountrySelect = row.querySelector('.country-select-start');
-            const endCountrySelect = row.querySelector('.country-select-end');
-            
-            if (startCountrySelect && endCountrySelect) {
-                startCountrySelect.value = defaultCountry;
-                endCountrySelect.value = defaultCountry;
+            for (const input of row.querySelectorAll('.airport-input-start, .airport-input-end')) {
+                input.addEventListener('input', () => showAirportMatches(input, input.countryAirports || []));
             }
             
             calculateTotal();
@@ -637,50 +685,7 @@
          * This calculation is critical for handling DST changes correctly across time zones.
          */
         function parseDateTimeWithTimezone(dateStr, timeStr, timeZone) {
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const [hour, minute] = timeStr.split(':').map(Number);
-
-            // 1. Create a timestamp for the wall-clock time, interpreted as UTC.
-            // This is a neutral point from which to calculate the offset.
-            const inputUtcTimestamp = Date.UTC(year, month - 1, day, hour, minute, 0);
-
-            // 2. Find the UTC offset (e.g., "GMT+5:30") for the target timezone at that time.
-            const referenceDate = new Date(inputUtcTimestamp);
-
-            const options = { timeZone: timeZone, timeZoneName: 'shortOffset', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric' };
-            const formatter = new Intl.DateTimeFormat('en-US', options);
-            
-            const formattedParts = formatter.formatToParts(referenceDate);
-            const offsetPart = formattedParts.find(p => p.type === 'timeZoneName')?.value;
-
-            if (!offsetPart) {
-                console.error(`TZ offset could not be retrieved via Intl.DateTimeFormat for ${timeZone}.`);
-                return null;
-            }
-            
-            // 3. Parse the offset string (e.g., "GMT-4" or "UTC+5:30") into minutes.
-            const match = offsetPart.match(/([+-])(\d+):?(\d+)?/);
-            let offsetMinutes = 0;
-            if (match) {
-                // + means ahead of UTC, - means behind (standard TZ notation)
-                const sign = match[1] === '+' ? 1 : -1; 
-                const hours = parseInt(match[2], 10);
-                const minutes = parseInt(match[3] || '0', 10);
-                offsetMinutes = sign * (hours * 60 + minutes);
-            } else {
-                // Fallback for simple offsets like "GMT" or "UTC"
-                if (offsetPart === "GMT" || offsetPart === "UTC") {
-                    offsetMinutes = 0;
-                } else {
-                    console.error(`Failed to parse numeric offset from string: ${offsetPart}. Returning null.`);
-                    return null;
-                }
-            }
-            
-            // 4. The absolute UTC timestamp is the input UTC timestamp MINUS the target timezone's offset.
-            // This corrects the wall-clock time to its absolute UTC equivalent, handling DST correctly.
-            const offsetMs = offsetMinutes * 60 * 1000;
-            return inputUtcTimestamp - offsetMs;
+            return localTimeToEpochMilliseconds(dateStr, timeStr, timeZone);
         }
 
         /**
@@ -693,6 +698,10 @@
             for (let row of rows) {
                 const op = parseInt(row.querySelector('.operator-select').value, 10);
                 const durationSpan = row.querySelector('.row-duration');
+                const validationMessage = row.querySelector('.validation-message');
+                const confirmDurationButton = row.querySelector('.confirm-duration-btn');
+                const startUtcPreview = row.querySelector('.utc-preview-start');
+                const endUtcPreview = row.querySelector('.utc-preview-end');
                 
                 // Get Date/Time
                 const startDateStr = row.querySelector('.time-date-start').value;
@@ -701,11 +710,12 @@
                 const endTimeStr = row.querySelector('.time-time-end').value;
 
                 // Get TimeZone (value is stored in the City dropdown)
-                const startTZ = row.querySelector('.city-select-start').value;
-                const endTZ = row.querySelector('.city-select-end').value;
+                const startTZ = row.querySelector('.airport-input-start').dataset.timeZone;
+                const endTZ = row.querySelector('.airport-input-end').dataset.timeZone;
 
                 let rowDurationMinutes = 0;
-                let hasError = false;
+                let errorMessage = '';
+                let includeInTotal = true;
                 
                 // Only proceed if all core input fields have valid values
                 if (startDateStr && startTimeStr && endDateStr && endTimeStr && startTZ && endTZ && startTZ !== "" && endTZ !== "") {
@@ -714,35 +724,62 @@
                         const startTimestamp = parseDateTimeWithTimezone(startDateStr, startTimeStr, startTZ);
                         const endTimestamp = parseDateTimeWithTimezone(endDateStr, endTimeStr, endTZ);
 
-                        if (startTimestamp === null || endTimestamp === null) {
-                            hasError = true;
-                        } else {
-                            // Duration in minutes
-                            rowDurationMinutes = Math.floor((endTimestamp - startTimestamp) / 60000); 
+                        startUtcPreview.innerText = `Departure: ${formatUtcDateTime(startTimestamp)}`;
+                        endUtcPreview.innerText = `Arrival: ${formatUtcDateTime(endTimestamp)}`;
+
+                        // Duration in minutes
+                        rowDurationMinutes = Math.floor((endTimestamp - startTimestamp) / 60000); 
+                        const durationSignature = [
+                            startDateStr, startTimeStr, startTZ,
+                            endDateStr, endTimeStr, endTZ,
+                        ].join('|');
+                        row.dataset.durationSignature = durationSignature;
+
+                        const durationValidation = validateLegDuration(
+                            rowDurationMinutes,
+                            row.dataset.confirmedDuration === durationSignature,
+                        );
+                        errorMessage = durationValidation.error;
+                        if (durationValidation.requiresConfirmation) {
+                            validationMessage.innerText = 'Unusually long leg—confirm before adding it';
+                            confirmDurationButton.style.display = 'block';
+                            includeInTotal = false;
                         }
                     } catch (e) {
                         console.error("Calculation Error:", e);
-                        hasError = true;
+                        errorMessage = 'Check DST time';
+                        startUtcPreview.innerText = 'Local time is invalid or repeated during a clock change';
+                        endUtcPreview.innerText = 'Check both local dates and times';
                     }
                 } else {
-                    hasError = true;
+                    errorMessage = 'Missing Data';
+                    startUtcPreview.innerText = 'Select an airport to see UTC';
+                    endUtcPreview.innerText = 'Select an airport to see UTC';
                 }
 
                 // --- Display Row Duration ---
-                if (hasError) {
-                    durationSpan.innerText = 'Missing Data';
+                if (errorMessage) {
+                    durationSpan.innerText = errorMessage;
                     durationSpan.style.color = 'var(--danger)';
                     rowDurationMinutes = 0; 
+                    validationMessage.innerText = '';
+                    confirmDurationButton.style.display = 'none';
                 } else {
                     const absRowMins = Math.abs(rowDurationMinutes);
                     const rowH = Math.floor(absRowMins / 60);
                     const rowM = absRowMins % 60;
                     durationSpan.innerText = `${rowH}h ${rowM}m`;
                     durationSpan.style.color = 'var(--primary)';
+                    if (includeInTotal) {
+                        validationMessage.innerText = '';
+                        confirmDurationButton.style.display = 'none';
+                    }
                 }
                 
                 // Add or subtract from grand total
-                grandTotalMinutes += (op * rowDurationMinutes);
+                if (includeInTotal) {
+                    grandTotalMinutes += (op * rowDurationMinutes);
+                }
             }
 
             // --- Display Grand Total ---
@@ -756,7 +793,7 @@
             if (grandTotalMinutes < 0) {
                 noteElement.innerText = "(Result is a negative difference)";
             } else {
-                noteElement.innerText = "Calculations account for Time Zones and Daylight Saving changes."; 
+                noteElement.innerText = `Time zones and daylight saving rules: IANA ${getTimezoneDataVersion()}.`; 
             }
         }
         
@@ -772,17 +809,31 @@
             }
             calculateTotal();
         }
+
+        function confirmLongDuration(button) {
+            const row = button.closest('.time-row');
+            row.dataset.confirmedDuration = row.dataset.durationSignature;
+            calculateTotal();
+        }
         
         function resetRow(rowElement) {
             rowElement.querySelector('.operator-select').value = '1';
+            delete rowElement.dataset.confirmedDuration;
+            delete rowElement.dataset.durationSignature;
             rowElement.querySelector('.time-date-start').value = today;
             rowElement.querySelector('.time-time-start').value = '09:00';
-            rowElement.querySelector('.country-select-start').value = defaultCountry;
-            updateCitySelect(rowElement.querySelector('.country-select-start'), 'start');
+            rowElement.querySelector('.country-select-start').value = '';
+            const startAirport = rowElement.querySelector('.airport-input-start');
+            startAirport.value = '';
+            startAirport.dataset.timeZone = '';
+            startAirport.disabled = true;
             rowElement.querySelector('.time-date-end').value = today;
             rowElement.querySelector('.time-time-end').value = '09:00';
-            rowElement.querySelector('.country-select-end').value = defaultCountry;
-            updateCitySelect(rowElement.querySelector('.country-select-end'), 'end');
+            rowElement.querySelector('.country-select-end').value = '';
+            const endAirport = rowElement.querySelector('.airport-input-end');
+            endAirport.value = '';
+            endAirport.dataset.timeZone = '';
+            endAirport.disabled = true;
 
             rowElement.querySelector('.row-duration').innerText = '0h 0m';
         }
@@ -826,7 +877,24 @@
         }
 
         // Initialize the app with one row when the page loads
-        document.addEventListener('DOMContentLoaded', addRow);
+        Object.assign(window, {
+            addRow,
+            calculateTotal,
+            clearAll,
+            confirmLongDuration,
+            removeRow,
+            updateAirportInput,
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await loadAirportCountries();
+                addRow();
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger);">The airport list could not be loaded. Please refresh and try again.</p>';
+                console.error(error);
+            }
+        });
     </script>
     <script type="module" src="/src/tracking.js"></script>
 

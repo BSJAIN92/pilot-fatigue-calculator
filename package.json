@@ -7,12 +7,25 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "convex:dev": "convex dev"
+    "convex:dev": "convex dev",
+    "airports:update": "node scripts/update-airports.mjs",
+    "test:timezones": "node scripts/test-timezones.mjs",
+    "test:durations": "node scripts/test-durations.mjs",
+    "test:analytics": "node scripts/test-analytics-validation.mjs",
+    "test:local-date": "node scripts/test-local-date.mjs",
+    "test:utc-format": "node scripts/test-utc-format.mjs",
+    "test:calculations": "node scripts/test-calculation-scenarios.mjs",
+    "test:calculations:store": "node scripts/test-calculation-scenarios.mjs --store",
+    "test:browser": "playwright test"
   },
   "dependencies": {
-    "convex": "^1.27.3"
+    "convex": "^1.27.3",
+    "moment-timezone": "^0.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "csv-parse": "^6.1.0",
+    "tz-lookup": "^6.1.25",
     "vite": "^7.1.5"
   }
 }

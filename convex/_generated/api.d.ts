@@ -9,6 +9,9 @@
  */
 
 import type * as analytics from "../analytics.js";
+import type * as dashboard from "../dashboard.js";
+import type * as lib_analyticsValidation from "../lib/analyticsValidation.js";
+import type * as testResults from "../testResults.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +21,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
+  dashboard: typeof dashboard;
+  "lib/analyticsValidation": typeof lib_analyticsValidation;
+  testResults: typeof testResults;
 }>;
 
 /**
