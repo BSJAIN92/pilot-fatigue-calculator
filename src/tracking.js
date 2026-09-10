@@ -37,6 +37,7 @@
 
     const eventNames = {
       "add-btn": "add_leg",
+      "deduct-btn": "deduction_requested",
       "clear-btn": "clear_requested",
       "confirm-yes": "clear_confirmed",
       "confirm-no": "clear_cancelled",
@@ -44,10 +45,14 @@
 
     if (button.classList.contains("remove-btn")) {
       track("remove_leg");
+    } else if (button.classList.contains("deduction-remove")) {
+      track("deduction_removed");
     } else if (eventNames[button.id]) {
       track(eventNames[button.id]);
     }
   });
+
+  document.addEventListener("deduction-added", () => track("deduction_added"));
 
   let calculationTimer;
   document.addEventListener("change", (event) => {
@@ -55,7 +60,7 @@
     clearTimeout(calculationTimer);
     calculationTimer = setTimeout(() => {
       const legs = [...document.querySelectorAll(".time-row")].map((row) => ({
-        operator: row.querySelector(".operator-select").value === "-1" ? "subtract" : "add",
+        operator: "add",
         departureCountry: row.querySelector(".country-select-start").value,
         departureAirport: row.querySelector(".airport-input-start").value,
         departureTimeZone: row.querySelector(".airport-input-start").dataset.timeZone ?? "",

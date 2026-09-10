@@ -334,7 +334,7 @@
         .app-container {
             background: transparent;
             box-shadow: none;
-            max-width: 760px;
+            max-width: 1180px;
             padding: 0;
         }
 
@@ -343,8 +343,71 @@
             display: flex;
             gap: 14px;
             margin: 0 auto 26px;
-            max-width: 680px;
+            max-width: none;
         }
+
+        .workspace {
+            align-items: start;
+            display: grid;
+            gap: 24px;
+            grid-template-columns: minmax(0, 760px) minmax(290px, 360px);
+            justify-content: center;
+        }
+
+        .summary-panel {
+            background: rgba(255,255,255,0.97);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            box-shadow: 0 14px 38px rgba(32, 65, 116, 0.1);
+            padding: 22px;
+            position: sticky;
+            top: 24px;
+        }
+
+        .summary-heading { color: #10254a; font-size: 1.05rem; }
+        .summary-subtitle { color: var(--text-light); font-size: 0.78rem; margin: 5px 0 18px; }
+        .summary-section { border-top: 1px solid var(--border-light); padding: 16px 0; }
+        .summary-section-title { color: var(--text-light); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; margin-bottom: 10px; text-transform: uppercase; }
+        .summary-empty { color: #8a98ad; font-size: 0.82rem; }
+        .summary-item { align-items: center; display: grid; gap: 3px 10px; grid-template-columns: 1fr auto; padding: 8px 0; }
+        .summary-item + .summary-item { border-top: 1px solid #edf1f7; }
+        .summary-route { color: #18325c; font-size: 0.86rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .summary-meta { color: var(--text-light); font-size: 0.72rem; }
+        .summary-duration { color: var(--primary); font-size: 0.86rem; font-weight: 800; grid-column: 2; grid-row: 1 / span 2; }
+        .deduction-duration { color: var(--danger); }
+        .deduction-remove { background: none; border: 0; color: #8a98ad; cursor: pointer; font-size: 1rem; margin-left: 5px; }
+
+        .modal-backdrop {
+            align-items: center;
+            background: rgba(9, 25, 52, 0.58);
+            display: flex;
+            inset: 0;
+            justify-content: center;
+            padding: 18px;
+            position: fixed;
+            z-index: 100;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 24px 70px rgba(9, 25, 52, 0.28);
+            max-width: 420px;
+            padding: 24px;
+            width: 100%;
+        }
+
+        .modal-card h2 { color: #10254a; font-size: 1.2rem; margin-bottom: 7px; }
+        .modal-card > p { color: var(--text-light); font-size: 0.86rem; margin-bottom: 18px; }
+        .modal-field { display: grid; gap: 7px; margin-bottom: 14px; }
+        .modal-field label { color: #40516c; font-size: 0.78rem; font-weight: 700; }
+        .modal-field input { border: 1px solid var(--border); border-radius: 11px; min-height: 45px; padding: 10px 12px; }
+        .duration-fields { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+        .modal-error { color: var(--danger); font-size: 0.78rem; min-height: 1.2em; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+        .modal-actions button { border-radius: 10px; cursor: pointer; font-weight: 700; min-height: 43px; padding: 0 16px; }
+        .modal-cancel { background: white; border: 1px solid var(--border); color: #40516c; }
+        .modal-save { background: var(--primary); border: 1px solid var(--primary); color: white; }
 
         .brand-mark {
             align-items: center;
@@ -517,6 +580,7 @@
         .action-btn { min-height: 50px; }
         #add-btn { background: white; border: 1px solid var(--primary); color: var(--primary); }
         #add-btn:hover { background: #edf4ff; }
+        #deduct-btn { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
         #clear-btn { border: 0; background: transparent; flex: 0 0 auto; }
 
         .result-area {
@@ -524,13 +588,13 @@
             background: rgba(255,255,255,0.96);
             border: 1px solid var(--border-light);
             border-radius: 20px;
-            bottom: 16px;
+            bottom: auto;
             box-shadow: 0 16px 50px rgba(20, 50, 100, 0.16);
             display: grid;
             grid-template-columns: 1fr auto;
-            margin: 28px 0 0;
+            margin: 0;
             padding: 18px 22px;
-            position: sticky;
+            position: static;
             text-align: left;
             z-index: 20;
         }
@@ -587,6 +651,11 @@
             .result-note { max-width: 190px; }
             .copy-btn { padding: 0 13px; }
         }
+
+        @media (max-width: 940px) {
+            .workspace { grid-template-columns: minmax(0, 760px); }
+            .summary-panel { position: static; }
+        }
     </style>
 </head>
 <body>
@@ -602,27 +671,40 @@
             </div>
         </header>
         
-        <!-- Time entry rows will be injected here by JavaScript -->
-        <div id="rows-container"></div>
+        <div class="workspace">
+            <main class="calculator-pane">
+                <div id="rows-container"></div>
+                <div class="button-group">
+                    <button id="add-btn" class="action-btn" onclick="addRow()">＋ Add another leg</button>
+                    <button id="deduct-btn" class="action-btn" onclick="openDeductionModal()">− Deduct time</button>
+                    <button id="clear-btn" class="action-btn" onclick="clearAll()">Clear All</button>
+                </div>
+            </main>
 
-        <!-- Action buttons -->
-        <div class="button-group">
-            <button id="add-btn" class="action-btn" onclick="addRow()">＋ Add another leg</button>
-            <button id="clear-btn" class="action-btn" onclick="clearAll()">Clear All</button>
-        </div>
-
-        <!-- Result display area -->
-        <div class="result-area">
-            <div class="result-copy">
-                <div class="result-label">Total Duration</div>
-                <div class="result-value" id="total-display">0h 0m</div>
-                <div class="result-note" id="subtraction-note">Calculations account for Time Zones and Daylight Saving changes.</div>
-            </div>
-            <button class="copy-btn" type="button" onclick="copyResult()" aria-label="Copy total duration">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2"/></svg>
-                Copy result
-            </button>
-            <span class="copy-status" id="copy-status" aria-live="polite"></span>
+            <aside class="summary-panel" aria-label="Journey summary">
+                <h2 class="summary-heading">Journey summary</h2>
+                <p class="summary-subtitle">Legs and deductions update automatically.</p>
+                <section class="summary-section">
+                    <h3 class="summary-section-title">Flight legs</h3>
+                    <div id="leg-summary-list"><p class="summary-empty">Add airport details to see a summary.</p></div>
+                </section>
+                <section class="summary-section">
+                    <h3 class="summary-section-title">Deductions</h3>
+                    <div id="deduction-summary-list"><p class="summary-empty">No deductions added.</p></div>
+                </section>
+                <div class="result-area">
+                    <div class="result-copy">
+                        <div class="result-label">Total Duration</div>
+                        <div class="result-value" id="total-display">0h 0m</div>
+                        <div class="result-note" id="subtraction-note">Calculations account for Time Zones and Daylight Saving changes.</div>
+                    </div>
+                    <button class="copy-btn" type="button" onclick="copyResult()" aria-label="Copy total duration">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2"/></svg>
+                        Copy result
+                    </button>
+                    <span class="copy-status" id="copy-status" aria-live="polite"></span>
+                </div>
+            </aside>
         </div>
     </div>
 
@@ -802,6 +884,8 @@
         let airportCountries = [];
         const airportsByCountry = new Map();
         let nextRowId = 1;
+        let deductions = [];
+        let nextDeductionId = 1;
 
         async function loadAirportCountries() {
             const response = await fetch('/airports/index.json');
@@ -901,10 +985,6 @@
                 <div class="leg-header">
                     <span class="leg-title">Leg ${rowId}</span>
                     <div class="leg-actions">
-                        <select class="operator-select" onchange="calculateTotal()" aria-label="How this leg affects the total">
-                            <option value="1">Add to total</option>
-                            <option value="-1">Subtract</option>
-                        </select>
                         <button class="remove-btn" onclick="removeRow(this)" title="Remove leg" aria-label="Remove leg">&times;</button>
                     </div>
                 </div>
@@ -995,7 +1075,7 @@
             const rows = document.getElementsByClassName('time-row');
 
             for (let row of rows) {
-                const op = parseInt(row.querySelector('.operator-select').value, 10);
+                row.dataset.calculatedMinutes = '';
                 const durationSpan = row.querySelector('.row-duration');
                 const validationMessage = row.querySelector('.validation-message');
                 const confirmDurationButton = row.querySelector('.confirm-duration-btn');
@@ -1077,27 +1157,126 @@
                 }
                 
                 // Add or subtract from grand total
-                if (includeInTotal) {
-                    grandTotalMinutes += (op * rowDurationMinutes);
+                if (!errorMessage && includeInTotal) {
+                    grandTotalMinutes += rowDurationMinutes;
+                    row.dataset.calculatedMinutes = String(rowDurationMinutes);
                 }
             }
+
+            const deductionMinutes = deductions.reduce((total, deduction) => total + deduction.minutes, 0);
+            grandTotalMinutes -= deductionMinutes;
 
             // --- Display Grand Total ---
             const absTotalMinutes = Math.abs(grandTotalMinutes);
             const finalHours = Math.floor(absTotalMinutes / 60);
             const finalMinutes = absTotalMinutes % 60;
 
-            document.getElementById('total-display').innerText = `${finalHours}h ${finalMinutes}m`;
+            const totalPrefix = grandTotalMinutes < 0 ? '−' : '';
+            document.getElementById('total-display').innerText = `${totalPrefix}${finalHours}h ${finalMinutes}m`;
             
             const noteElement = document.getElementById('subtraction-note');
-            if (grandTotalMinutes < 0) {
-                noteElement.innerText = "(Result is a negative difference)";
-            } else {
-                noteElement.innerText = `Time zones and daylight saving rules: IANA ${getTimezoneDataVersion()}.`; 
-            }
+            noteElement.innerText = `${rows.length} ${rows.length === 1 ? 'leg' : 'legs'} · ${deductions.length} ${deductions.length === 1 ? 'deduction' : 'deductions'} · IANA ${getTimezoneDataVersion()}`;
+            renderJourneySummary();
         }
         
         // --- Utility functions ---
+
+        function formatMinutes(minutes) {
+            const absoluteMinutes = Math.abs(minutes);
+            return `${Math.floor(absoluteMinutes / 60)}h ${absoluteMinutes % 60}m`;
+        }
+
+        function escapeHtml(value) {
+            return value.replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+            })[character]);
+        }
+
+        function renderJourneySummary() {
+            const legList = document.getElementById('leg-summary-list');
+            const validRows = [...document.querySelectorAll('.time-row')]
+                .filter(row => row.dataset.calculatedMinutes !== '');
+
+            legList.innerHTML = validRows.length ? validRows.map(row => {
+                const departure = row.querySelector('.airport-input-start');
+                const arrival = row.querySelector('.airport-input-end');
+                const departureLabel = escapeHtml(departure.dataset.airportCodes || departure.dataset.airportName || 'Departure');
+                const arrivalLabel = escapeHtml(arrival.dataset.airportCodes || arrival.dataset.airportName || 'Arrival');
+                const date = row.querySelector('.time-date-start').value;
+                const duration = Number(row.dataset.calculatedMinutes);
+                return `<div class="summary-item">
+                    <div class="summary-route">${departureLabel} → ${arrivalLabel}</div>
+                    <div class="summary-meta">${date}</div>
+                    <div class="summary-duration">${formatMinutes(duration)}</div>
+                </div>`;
+            }).join('') : '<p class="summary-empty">Add airport details to see a summary.</p>';
+
+            const deductionList = document.getElementById('deduction-summary-list');
+            deductionList.innerHTML = deductions.length ? deductions.map(deduction => `
+                <div class="summary-item">
+                    <div class="summary-route">${escapeHtml(deduction.label)}</div>
+                    <div class="summary-meta">Time deducted</div>
+                    <div class="summary-duration deduction-duration">−${formatMinutes(deduction.minutes)}
+                        <button class="deduction-remove" type="button" onclick="removeDeduction(${deduction.id})" aria-label="Remove deduction">×</button>
+                    </div>
+                </div>`).join('') : '<p class="summary-empty">No deductions added.</p>';
+        }
+
+        function openDeductionModal() {
+            if (document.getElementById('modal-backdrop')) return;
+            const backdrop = document.createElement('div');
+            backdrop.id = 'modal-backdrop';
+            backdrop.className = 'modal-backdrop';
+            backdrop.innerHTML = `
+                <div id="deduction-modal" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="deduction-title">
+                    <h2 id="deduction-title">Deduct time</h2>
+                    <p>Use this for time that should not count toward the final total.</p>
+                    <div class="modal-field">
+                        <label for="deduction-label">Reason</label>
+                        <input id="deduction-label" type="text" maxlength="60" value="Time adjustment">
+                    </div>
+                    <div class="duration-fields">
+                        <div class="modal-field">
+                            <label for="deduction-hours">Hours</label>
+                            <input id="deduction-hours" type="number" min="0" max="999" value="0" inputmode="numeric">
+                        </div>
+                        <div class="modal-field">
+                            <label for="deduction-minutes">Minutes</label>
+                            <input id="deduction-minutes" type="number" min="0" max="59" value="0" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div id="deduction-error" class="modal-error" aria-live="polite"></div>
+                    <div class="modal-actions">
+                        <button id="deduction-cancel" class="modal-cancel" type="button">Cancel</button>
+                        <button id="deduction-save" class="modal-save" type="button">Add deduction</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(backdrop);
+
+            const close = () => backdrop.remove();
+            document.getElementById('deduction-cancel').onclick = close;
+            backdrop.onclick = event => { if (event.target === backdrop) close(); };
+            document.getElementById('deduction-save').onclick = () => {
+                const hours = Number(document.getElementById('deduction-hours').value);
+                const minutes = Number(document.getElementById('deduction-minutes').value);
+                const error = document.getElementById('deduction-error');
+                if (!Number.isInteger(hours) || hours < 0 || hours > 999 || !Number.isInteger(minutes) || minutes < 0 || minutes > 59 || hours * 60 + minutes === 0) {
+                    error.innerText = 'Enter at least 1 minute. Minutes must be between 0 and 59.';
+                    return;
+                }
+                const rawLabel = document.getElementById('deduction-label').value.trim();
+                deductions.push({ id: nextDeductionId++, label: rawLabel || 'Time adjustment', minutes: hours * 60 + minutes });
+                document.dispatchEvent(new CustomEvent('deduction-added'));
+                close();
+                calculateTotal();
+            };
+            document.getElementById('deduction-hours').focus();
+        }
+
+        function removeDeduction(id) {
+            deductions = deductions.filter(deduction => deduction.id !== id);
+            calculateTotal();
+        }
 
         function removeRow(btn) {
             const rows = document.getElementsByClassName('time-row');
@@ -1142,9 +1321,9 @@
         }
         
         function resetRow(rowElement) {
-            rowElement.querySelector('.operator-select').value = '1';
             delete rowElement.dataset.confirmedDuration;
             delete rowElement.dataset.durationSignature;
+            delete rowElement.dataset.calculatedMinutes;
             rowElement.querySelector('.time-date-start').value = today;
             rowElement.querySelector('.time-time-start').value = '09:00';
             rowElement.querySelector('.country-select-start').value = '';
@@ -1168,21 +1347,15 @@
 
             const backdrop = document.createElement('div');
             backdrop.id = 'modal-backdrop';
-            backdrop.style = `
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.5); z-index: 100;
-                display: flex; align-items: center; justify-content: center;
-            `;
+            backdrop.className = 'modal-backdrop';
 
             const modal = document.createElement('div');
             modal.id = 'confirm-modal';
-            modal.style = `
-                background: white; padding: 20px; border-radius: 8px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: center; max-width: 300px;
-            `;
+            modal.className = 'modal-card';
             
             modal.innerHTML = `
-                <p style="font-size: 1.1rem; margin-bottom: 20px;">Are you sure you want to clear all flight legs?</p>
+                <h2>Clear everything?</h2>
+                <p>This removes all flight legs and deductions.</p>
                 <button id="confirm-yes" style="padding: 8px 16px; border: none; border-radius: 6px; background: var(--danger); color: white; cursor: pointer; margin-right: 10px;">Yes, Clear All</button>
                 <button id="confirm-no" style="padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer;">Cancel</button>
             `;
@@ -1193,6 +1366,8 @@
             document.getElementById('confirm-yes').onclick = function() {
                 container.innerHTML = '';
                 nextRowId = 1;
+                deductions = [];
+                nextDeductionId = 1;
                 addRow();
                 document.body.removeChild(backdrop);
             };
@@ -1209,6 +1384,8 @@
             clearAll,
             confirmLongDuration,
             copyResult,
+            openDeductionModal,
+            removeDeduction,
             removeRow,
             updateAirportInput,
         });

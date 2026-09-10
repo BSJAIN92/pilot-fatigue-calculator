@@ -1,6 +1,9 @@
 const ALLOWED_EVENTS = new Set([
   "page_view",
   "add_leg",
+  "deduction_requested",
+  "deduction_added",
+  "deduction_removed",
   "remove_leg",
   "clear_requested",
   "clear_confirmed",
